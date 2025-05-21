@@ -23,33 +23,54 @@ const setAuthHeader = (token) => {
 
 /**
  * Logs in a user.
- * @param {string} username - The user's username.
- * @param {string} password - The user's password.
+ * @param {object} credentials - The user's credentials.
+ * @param {string} credentials.username - The user's username.
+ * @param {string} credentials.password - The user's password.
  * @returns {Promise<object>} The user data and token from the API.
  */
-const login = async (username, password) => {
+const login = async ({ username, password }) => {
   try {
     const response = await apiClient.post('/auth/login', { username, password });
     return response.data;
   } catch (error) {
     console.error('Login API error:', error.response ? error.response.data : error.message);
-    throw error.response ? error.response.data : new Error('Login failed');
+    throw error; // Propagate the original Axios error
   }
 };
 
 /**
  * Signs up a new user.
- * @param {string} username - The new user's username.
- * @param {string} password - The new user's password.
+ * @param {object} credentials - The new user's credentials.
+ * @param {string} credentials.username - The new user's username.
+ * @param {string} credentials.password - The new user's password.
  * @returns {Promise<object>} The user data and token from the API.
  */
-const signup = async (username, password) => {
+const signup = async ({ username, password }) => {
   try {
     const response = await apiClient.post('/auth/signup', { username, password });
     return response.data;
   } catch (error) {
     console.error('Signup API error:', error.response ? error.response.data : error.message);
-    throw error.response ? error.response.data : new Error('Signup failed');
+    throw error; // Propagate the original Axios error
+  }
+};
+
+/**
+ * Verifies the current token and returns user data.
+ * Assumes Authorization header is set via setAuthHeader.
+ * @returns {Promise<object|null>} The user data from the API, or null if token is invalid (401/403).
+ */
+const verifyToken = async () => {
+  try {
+    const response = await apiClient.get('/auth/verify-token');
+    return response.data;
+  } catch (error) {
+    console.error('Verify Token API error:', error.response ? error.response.data : error.message);
+    // Do not throw if it's a 401 or 403, as this is an expected outcome for an invalid token
+    if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+      return null; 
+    }
+    throw error; // Propagate other errors (e.g., network, 500)
   }
 };
 
@@ -65,7 +86,7 @@ const logWorkout = async (workoutData) => {
     return response.data;
   } catch (error) {
     console.error('Log Workout API error:', error.response ? error.response.data : error.message);
-    throw error.response ? error.response.data : new Error('Failed to log workout');
+    throw error; // Propagate the original Axios error
   }
 };
 
@@ -80,7 +101,7 @@ const getWorkoutHistory = async () => {
     return response.data;
   } catch (error) {
     console.error('Get Workout History API error:', error.response ? error.response.data : error.message);
-    throw error.response ? error.response.data : new Error('Failed to fetch workout history');
+    throw error; // Propagate the original Axios error
   }
 };
 
@@ -95,7 +116,7 @@ const getPersonalRecords = async () => {
     return response.data;
   } catch (error) {
     console.error('Get Personal Records API error:', error.response ? error.response.data : error.message);
-    throw error.response ? error.response.data : new Error('Failed to fetch personal records');
+    throw error; // Propagate the original Axios error
   }
 };
 
@@ -111,7 +132,7 @@ const getExerciseProgress = async (exerciseName) => {
     return response.data;
   } catch (error) {
     console.error('Get Exercise Progress API error:', error.response ? error.response.data : error.message);
-    throw error.response ? error.response.data : new Error('Failed to fetch exercise progress');
+    throw error; // Propagate the original Axios error
   }
 };
 
@@ -119,6 +140,7 @@ const apiService = {
   setAuthHeader,
   login,
   signup,
+  verifyToken,
   logWorkout,
   getWorkoutHistory,
   getPersonalRecords,
